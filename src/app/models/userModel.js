@@ -1,19 +1,21 @@
-const { Int32 } = require('mongodb')
 const mongoose = require('mongoose')
+const shortID = require('short-id')
 const Schema = mongoose.Schema
 
 
 const UserSchema = new Schema({
-    id: {
-        type: Number,
+    userID: {
+        type: String,
         required: true,
         trim: true,
-        unique: true
+        unique: true,
+        default: shortID.generate(),
     },
     storeName: {
         type: String,
         required: false,
         trim: true,
+        default: 'NoStoreBruhhh'
     },
     username: {
         type: String,
@@ -44,8 +46,9 @@ const UserSchema = new Schema({
     },
     type: {
         type: String,
-        required: true,
-    }
+        enum: ['SHOP','STAFF','CUSTOMER','BANNED'],
+        default: 'CUSTOMER'
+    },
 
 }, {
     timestamps: true,

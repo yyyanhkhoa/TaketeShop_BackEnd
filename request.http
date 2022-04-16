@@ -1,1 +1,10 @@
-GET http://localhost:5000/data  
+GET http://localhost:5000/product/all
+#  GET http://localhost:5000/user/getAllUser
+
+
+GET http://localhost:5000/product/productList?categoryID=3
+
+//Add Product without Image Request
+POST http://localhost:5000/product/addWthImage?categoryID=7&userID=2&name=TrungVit&descriptions=Perfectionnn&price=200000&quantity=200&unitID=3
+
+//

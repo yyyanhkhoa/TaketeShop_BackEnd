@@ -4,7 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "SQL": "nodemon src/server/SQLServer.js",
+    "learnEx": "nodemon src/learnEx.js",
+    "server": "nodemon src/server/server.js",
+    "Mongo": "nodemon src/server/chatServer",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -31,7 +33,10 @@
     "mogoose": "^0.0.1-security",
     "mongodb": "^4.4.1",
     "mongoose": "^6.2.8",
-    "mysql2": "^2.3.3"
+    "mysql2": "^2.3.3",
+    "request": "^2.88.2",
+    "short-id": "^0.1.0-1",
+    "underscore": "^1.7.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.15"

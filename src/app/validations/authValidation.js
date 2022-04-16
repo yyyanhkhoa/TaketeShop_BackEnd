@@ -8,7 +8,7 @@ const validateEmail = (email) => {
         );
 }
 
-const validateUser = async ({id, storeName, userName, password, name, age, gender, email, type}) => {
+const validateUser = async ({storeName, username, password, name, age, gender, email, type}) => {
 
     if (name.length < 6) {
         return {
@@ -32,19 +32,6 @@ const validateUser = async ({id, storeName, userName, password, name, age, gende
     if (user) {
         return {
             message: 'The email already exists'
-        }
-    }
-
-    if (!phone) {
-        return {
-            message: 'Phone is required'
-        }
-    }
-
-    const user2 = await Users.findOne({ phone })
-    if (user2) {
-        return {
-            message: 'The phone already exists'
         }
     }
 
