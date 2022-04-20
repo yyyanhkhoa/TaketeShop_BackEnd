@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const { Users } = require("../models");
 const { authService } = require("../services");
 const { authValidation } = require("../validations");
+const SQLpool = require("../../database/connectSQL");
 
 class UserController {
   index(req, res, next) {
@@ -10,48 +11,43 @@ class UserController {
 
   async register(req, res) {
     try {
-      const { storeName, username, password, name, age, gender, email, type } =
+      const { username, password, name, birthday, gender, email, type } =
         req.body;
-      const validate = await authValidation.validateUser({
-        storeName,
-        username,
-        password,
-        name,
-        age,
-        gender,
-        email,
-        type,
-      });
-      if (validate.message) {
-        return res.status(400).json({
-          success: false,
-          message: validate.message,
-        });
-      }
 
       // hash password
       const passwordHash = await bcrypt.hash(password, 10);
 
-      // create new User
-      const newUser = new Users({
-        storeName,
-        username,
-        password: passwordHash,
-        name,
-        age,
-        gender,
-        email,
-        type,
-      });
+      // // create new User
+      // const newUser = new Users({
+      //   null,
+      //   username,
+      //   password: passwordHash,
+      //   name,
+      //   birthday,
+      //   age,
+      //   gender,
+      //   email,
+      //   type,
+      // });
 
       // save new user
-      await newUser.save();
+      await createAccount(
+        username,
+        password,
+        name,
+        birthday,
+        gender,
+        email,
+        type
+      );
 
       // Create jsonwebtoken to authentication
-      const accessToken = authService.createAccessToken({ id: newUser.id });
+      // const accessToken = authService.createAccessToken({ id: newUser.id });
+      const userID = getUserIDByEmail(email);
+      const accessToken = authService.createAccessToken(userID);
 
       // create refresh token
-      const refreshToken = authService.createRefreshToken({ id: newUser._id });
+      const refreshToken = authService.createRefreshToken(userID);
 
       res.cookie("refresh_token", refreshToken, {
         httpOnly: true,
@@ -75,9 +71,10 @@ class UserController {
       console.log({ username, password });
 
       // check user exists
-      const user = await Users.findOne({ username });
-      if (user) {
-        console.log(user);
+      const user = await getUserByID({ username });
+      if (user !== -1) {
+        console.log(user + " found");
+        // const isMatch = await bcrypt.compare(password, user.password);
         const isMatch = await bcrypt.compare(password, user.password);
 
         // password match
@@ -147,52 +144,132 @@ class UserController {
       });
     }
   }
+  async createAccount(username, password, name, birthday, gender, email, type) {
+    try {
+      var command =
+        "INSERT INTO `User` (`id`, `username`, `password`, `name`, `birthday`, `gender`, `email`, `type`, `create_time`, `update_time`) VALUES (NULL, '" +
+        username +
+        "', '" +
+        password +
+        "', '" +
+        name +
+        "', '" +
+        birthday +
+        "', '" +
+        gender +
+        "', '" +
+        email +
+        "', '" +
+        type +
+        "', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+      SQLpool.execute(command, (err, result, field) => {
+        if (err) throw err;
+        console.log(result);
+        res.send(result);
+      });
+    } catch (err) {
+      console.log("Add User Error");
+      console.log(err);
+    }
+  }
+  async getUserIDByEmail(email) {
+    try {
+      var command = "SELECT id FROM `User` WHERE email = " + `'${email}'`;
+      SQLpool.execute(command, (err, result, field) => {
+        if (err) throw err;
+        if (result.length > 0) return result;
+        return -1;
+      });
+    } catch (err) {
+      console.log("Find User by Email error");
+      console.log(err);
+    }
+  }
 
+  async getUserByUsername(username) {
+    try {
+      var command = "SELECT * FROM `User` WHERE username = " + `'${username}'`;
+      SQLpool.execute(command, (err, result, field) => {
+        if (err) throw err;
+        if (result.length > 0) return result;
+        return -1;
+      });
+    } catch (err) {
+      console.log("Find User by ID error");
+      console.log(err);
+    }
+  }
+
+  async getUserByID(id) {
+    try {
+      var command = "SELECT * FROM `User` WHERE id = " + `'${id}'`;
+      SQLpool.execute(command, (err, result, field) => {
+        if (err) throw err;
+        if (result.length > 0) return result;
+        return -1;
+      });
+    } catch (err) {
+      console.log("Find User by ID error");
+      console.log(err);
+    }
+  }
   async getAllUser(req, res) {
     try {
-      const users = await Users.find();
-      res.send(users);
+      var command = "SELECT * FROM `User`";
+      SQLpool.execute(command, (err, result, field) => {
+        if (err) throw err;
+        console.log(result);
+        res.send(result);
+      });
     } catch (err) {
       console.log(err);
     }
   }
-  async getUser(req, res) {
+  async getUserByIDRequest(req, res) {
     try {
       const userID = req.params.id;
-      const users = await Users.find({ userID: userID });
-      console.log(userID);
-      res.send(users);
+      var command = "SELECT * FROM `User` WHERE userID =" + userID;
+      SQLpool.execute(command, (err, result, field) => {
+        if (err) throw err;
+        console.log(result.length);
+        res.send(result);
+      });
     } catch (err) {
       console.log(err);
     }
   }
 
-  async changeUserName(req, res) {
+  async updateUserByIDRequest(req, res) {
     const field = req.query.field;
     const value = req.query.value;
-    try {
-      const userID = req.params.id;
-      const users = await Users.findOneAndUpdate(
-        { userID: userID },
-        { [field]: value }
-      );
+    const userID = req.params.id;
 
-      res.send(users);
+    try {
+      var command =
+        "UPDATE `User` SET `" +
+        field +
+        "` = '" +
+        value +
+        "', `update_time` = CURRENT_TIMESTAMP WHERE id = " +
+        userID;
+      SQLpool.execute(command, (err, result, field) => {
+        if (err) throw err;
+        console.log(result);
+        res.send(result);
+      });
     } catch (err) {
       console.log(err);
     }
   }
-  async deleteUser(req, res) {
-    const field = req.query.field;
-    const value = req.query.value;
+  async deleteUserByIDRequest(req, res) {
+    const userID = req.params.id;
     try {
-      const userID = req.params.id;
-      const users = await Users.findOneAndDelete(
-        { userID: userID },
-      );
-      
-
-      res.send(users);
+      var command = "DELETE FROM User WHERE id = " + userID;
+      SQLpool.execute(command, (err, result, field) => {
+        if (err) throw err;
+        console.log(result);
+        res.send(result);
+      });
     } catch (err) {
       console.log(err);
     }

@@ -1,5 +1,6 @@
-GET http://localhost:5000/product/all
+# GET http://localhost:5000/product/all
 #  GET http://localhost:5000/user/getAllUser
+DELETE http://localhost:5000/user/14
 
 
 GET http://localhost:5000/product/productList?categoryID=3

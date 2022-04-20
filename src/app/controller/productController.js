@@ -25,10 +25,22 @@ class ProductController {
     try {
       var command =
         "SELECT * FROM `Product` WHERE category_id =" + req.query.categoryID;
-        console.log(req.query.categoryID);
       SQLpool.execute(command, (err, result, field) => {
         if (err) throw err;
-        console.log(result);
+        console.log(result.length);
+        res.send(result);
+      });
+    } catch (err) {
+      console.log("Product Error");
+      console.log(err);
+    }
+  }
+  async getProductByID(req, res) {
+    try {
+      var command = "SELECT * FROM `Product` WHERE id =" + req.params.id;
+      SQLpool.execute(command, (err, result, field) => {
+        if (err) throw err;
+        console.log(result.length);
         res.send(result);
       });
     } catch (err) {
@@ -37,34 +49,25 @@ class ProductController {
     }
   }
 
-  async updateProduct(req, res) {
+  async updateProductByIDRequest(req, res) {
+    const field = req.query.field;
+    const value = req.query.value;
+    const productID = req.params.id;
+
     try {
-      const product = req.query;
-      const command =
-        "UPDATE `Product` SET `id` = '" +
-        product.id +
-        "', `category_id` = '" +
-        product.categoryID +
-        "', `name` = '" +
-        product.name +
-        "', `descriptions` = '" +
-        product.descriptions +
-        "', `price` = '" +
-        product.price +
-        "', `quantity` = '" +
-        product.quantity +
-        "', `unid_id` = '" +
-        product.unidID +
-        "', `discount_id` = '" +
-        product.discountID +
-        "', `update_time` = CURRENT_TIMESTAMP WHERE `Product`.`id` = 2";
+      var command =
+        "UPDATE `Product` SET `" +
+        field +
+        "` = '" +
+        value +
+        "', `update_time` = CURRENT_TIMESTAMP WHERE id = " +
+        productID;
       SQLpool.execute(command, (err, result, field) => {
         if (err) throw err;
-        console.log("Update Product Success");
+        console.log(result);
         res.send(result);
       });
     } catch (err) {
-      console.log("Update Product Error: ");
       console.log(err);
     }
   }

@@ -8,7 +8,13 @@ const validateEmail = (email) => {
         );
 }
 
-const validateUser = async ({storeName, username, password, name, age, gender, email, type}) => {
+const validateUser = async ({username, password, name, birthday, gender, email, type}) => {
+
+    if (username.length < 6) {
+        return {
+            message: 'Username must be at least 6 characters'
+        }
+    }
 
     if (name.length < 6) {
         return {
