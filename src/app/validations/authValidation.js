@@ -1,59 +1,22 @@
-const { Users } = require('../models')
+const { check } = require("express-validator");
 
-const validateEmail = (email) => {
-    return String(email)
-        .toLowerCase()
-        .match(
-            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-        );
-}
+exports.signupValidation = [
+  check("username", "Username is requied").not().isEmpty(),
+  check("password", "Password is requied").not().isEmpty(),
+  check("password", "Password must be 6 or more characters").isLength({
+    min: 6,
+  }),
+  check("birthday", "Birthday is requied").not().isEmpty(),
+  check("gender", "Gender is requied").not().isEmpty(),
+  check("email", "Please include a valid email")
+    .isEmail()
+    .normalizeEmail({ gmail_remove_dots: true }),
+  check("type", "Type is requied").not().isEmpty(),
+];
 
-const validateUser = async ({username, password, name, birthday, gender, email, type}) => {
-
-    if (username.length < 6) {
-        return {
-            message: 'Username must be at least 6 characters'
-        }
-    }
-
-    if (name.length < 6) {
-        return {
-            message: 'Names must be at least 6 characters'
-        }
-    }
-
-    if (!email) {
-        return {
-            message: 'Email is required'
-        }
-    }
-
-    if (!validateEmail(email)) {
-        return {
-            message: 'The email is invalid'
-        }
-    }
-
-    const user = await Users.findOne({ email })
-    if (user) {
-        return {
-            message: 'The email already exists'
-        }
-    }
-
-    if (password.length < 6) {
-        return {
-            message: 'Password must be at least 6 characters'
-        }
-    }
-
-    return {
-
-    }
-
-}
-
-module.exports = {
-    validateEmail,
-    validateUser
-}
+exports.loginValidation = [
+  check("name", "Name is requied").not().isEmpty(),
+  check("password", "Password must be 6 or more characters").isLength({
+    min: 6,
+  }),
+];

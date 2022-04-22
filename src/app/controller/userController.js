@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const { Users } = require("../models");
 const { authService } = require("../services");
 const { authValidation } = require("../validations");
+const jwt = require("jsonwebtoken");
 const SQLpool = require("../../database/connectSQL");
 
 class UserController {
@@ -10,96 +11,130 @@ class UserController {
   }
 
   async register(req, res) {
+    let command = "";
+    const { username, password, name, birthday, gender, email, type } =
+      req.body;
     try {
-      const { username, password, name, birthday, gender, email, type } =
-        req.body;
+      SQLpool.getConnection((err, connection) => {
+        if (err) throw err;
 
-      // hash password
-      const passwordHash = await bcrypt.hash(password, 10);
-
-      // // create new User
-      // const newUser = new Users({
-      //   null,
-      //   username,
-      //   password: passwordHash,
-      //   name,
-      //   birthday,
-      //   age,
-      //   gender,
-      //   email,
-      //   type,
-      // });
-
-      // save new user
-      await createAccount(
-        username,
-        password,
-        name,
-        birthday,
-        gender,
-        email,
-        type
-      );
-
-      // Create jsonwebtoken to authentication
-      // const accessToken = authService.createAccessToken({ id: newUser.id });
-      const userID = getUserIDByEmail(email);
-      const accessToken = authService.createAccessToken(userID);
-
-      // create refresh token
-      const refreshToken = authService.createRefreshToken(userID);
-
-      res.cookie("refresh_token", refreshToken, {
-        httpOnly: true,
-        path: "/user/refresh_token",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+        //check duplicated email
+        command = `SELECT * FROM User WHERE email = ${"'" + email + "'"};`;
+        connection.query(command, (error, result) => {
+          if (error) throw error;
+          if (result.length) {
+            return res.status(409).send({
+              msg: "This email is already in use!",
+            });
+          }
+        });
+        //check duplicated username
+        command = `SELECT * FROM User WHERE username = ${
+          "'" + username + "'"
+        };`;
+        connection.query(command, (error, result) => {
+          if (error) throw error;
+          if (result.length) {
+            return res.status(409).send({
+              msg: "This username is already in use!",
+            });
+          }
+        });
+        // hash password
+        bcrypt.hash(password, 10, (error, passwordHashed) => {
+          if (error) throw error;
+          if (err) {
+            return res.status(500).send({
+              msg: err,
+            });
+          }
+          // has hashed pw => add to database
+          command =
+            "INSERT INTO `User` (`id`, `username`, `password`, `name`, `birthday`, `gender`, `email`, `type`, `create_time`, `update_time`) VALUES (NULL, '" +
+            username +
+            "', '" +
+            passwordHashed +
+            "', '" +
+            name +
+            "', '" +
+            birthday +
+            "', '" +
+            gender +
+            "', '" +
+            email +
+            "', '" +
+            type +
+            "', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
+          connection.query(command, (err, result) => {
+            if (err) {
+              return res.status(400).send({
+                msg: err,
+              });
+            }
+            console.log(result);
+            return res.status(201).send({
+              msg: "The user has been registered with us!",
+            });
+          });
+        });
+        connection.end();
       });
-
-      res.json({ accessToken });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error.message,
-      });
+    } catch (err) {
+      console.log(err);
     }
   }
-
   async login(req, res) {
+    let command = "";
+    const { username, password } = req.body;
     try {
-      const { username, password } = req.body;
+      SQLpool.getConnection((err, connection) => {
+        if (err) throw err;
 
-      console.log({ username, password });
+        command = `SELECT * FROM User WHERE username = ${
+          "'" + username + "'"
+        };`;
+        connection.query(command, (error, result) => {
+          if (error) throw error;
+          if (!result.length) {
+            return res.status(401).send({
+              msg: "Username is incorrect",
+            });
+          }
 
-      // check user exists
-      const user = await getUserByID({ username });
-      if (user !== -1) {
-        console.log(user + " found");
-        // const isMatch = await bcrypt.compare(password, user.password);
-        const isMatch = await bcrypt.compare(password, user.password);
+          //check Password
+          bcrypt.compare(password, result[0]["password"], (bErr, bResult) => {
+            // wrong password
+            if (bErr) {
+              return res.status(401).send({
+                msg: "Password is incorrect!",
+              });
+            }
+            if (bResult) {
+              // create token
+              const token = authService.createAccessToken({ id: result[0].id });
+              // create refresh token
+              const refreshToken = authService.createRefreshToken({
+                id: result[0].id,
+              });
+              // save refresh token to cookie
+              res.cookie("refresh_token", refreshToken, {
+                httpOnly: true,
+                path: "/user/refresh_token",
+                maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+              });
 
-        // password match
-        if (isMatch) {
-          // Create jsonwebtoken to authentication
-          const accessToken = authService.createAccessToken({ id: user._id });
-
-          // create refresh token
-          const refreshToken = authService.createRefreshToken({ id: user._id });
-
-          res.cookie("refresh_token", refreshToken, {
-            httpOnly: true,
-            path: "/user/refresh_token",
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+              return res.status(200).send({
+                msg: `${result[0].name} (${result[0].username}) logged in!`,
+                token,
+              });
+            }
+            return res.status(401).send({
+              msg: "Username or password is incorrect!",
+            });
           });
-
-          return res.json({ accessToken });
-        }
-      }
-
-      res.status(400).json({
-        success: false,
-        message: "Username or password incorrect.",
+        });
       });
-    } catch (error) {
+    } catch (err) {
       res.status(500).json({
         success: false,
         message: error.message,
@@ -142,47 +177,6 @@ class UserController {
         success: false,
         message: error.message,
       });
-    }
-  }
-  async createAccount(username, password, name, birthday, gender, email, type) {
-    try {
-      var command =
-        "INSERT INTO `User` (`id`, `username`, `password`, `name`, `birthday`, `gender`, `email`, `type`, `create_time`, `update_time`) VALUES (NULL, '" +
-        username +
-        "', '" +
-        password +
-        "', '" +
-        name +
-        "', '" +
-        birthday +
-        "', '" +
-        gender +
-        "', '" +
-        email +
-        "', '" +
-        type +
-        "', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
-      SQLpool.execute(command, (err, result, field) => {
-        if (err) throw err;
-        console.log(result);
-        res.send(result);
-      });
-    } catch (err) {
-      console.log("Add User Error");
-      console.log(err);
-    }
-  }
-  async getUserIDByEmail(email) {
-    try {
-      var command = "SELECT id FROM `User` WHERE email = " + `'${email}'`;
-      SQLpool.execute(command, (err, result, field) => {
-        if (err) throw err;
-        if (result.length > 0) return result;
-        return -1;
-      });
-    } catch (err) {
-      console.log("Find User by Email error");
-      console.log(err);
     }
   }
 
