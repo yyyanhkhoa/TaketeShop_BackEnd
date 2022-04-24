@@ -19,32 +19,34 @@ class UserController {
         if (err) throw err;
 
         //check duplicated email
-        command = `SELECT * FROM User WHERE email = ${"'" + email + "'"};`;
-        connection.query(command, (error, result) => {
-          if (error) throw error;
-          if (result.length) {
-            return res.status(409).send({
-              msg: "This email is already in use!",
-            });
-          }
-        });
-        //check duplicated username
-        command = `SELECT * FROM User WHERE username = ${
+        command = `SELECT * FROM User WHERE email = ${"'" + email + "'"} OR ${
           "'" + username + "'"
         };`;
         connection.query(command, (error, result) => {
           if (error) throw error;
-          if (result.length) {
-            return res.status(409).send({
-              msg: "This username is already in use!",
-            });
+          if (!result.length) {
+            if (username === result.username) {
+              return res.status(409).send({
+                error: true,
+                msg: "This username is already in use!",
+              });
+            }
+
+            if (email === result.email) {
+              return res.status(409).send({
+                error: true,
+                msg: "This email is already in use!",
+              });
+            }
           }
         });
+
         // hash password
         bcrypt.hash(password, 10, (error, passwordHashed) => {
           if (error) throw error;
           if (err) {
             return res.status(500).send({
+              error: true,
               msg: err,
             });
           }
@@ -68,11 +70,13 @@ class UserController {
           connection.query(command, (err, result) => {
             if (err) {
               return res.status(400).send({
+                error: true,
                 msg: err,
               });
             }
             console.log(result);
             return res.status(201).send({
+              error: false,
               msg: "The user has been registered with us!",
             });
           });
@@ -81,6 +85,10 @@ class UserController {
       });
     } catch (err) {
       console.log(err);
+      return res.send({
+        error: true,
+        msg: err,
+      });
     }
   }
   async login(req, res) {
@@ -97,6 +105,7 @@ class UserController {
           if (error) throw error;
           if (!result.length) {
             return res.status(401).send({
+              error: true,
               msg: "Username is incorrect",
             });
           }
@@ -106,6 +115,7 @@ class UserController {
             // wrong password
             if (bErr) {
               return res.status(401).send({
+                error: true,
                 msg: "Password is incorrect!",
               });
             }
@@ -124,11 +134,21 @@ class UserController {
               });
 
               return res.status(200).send({
+                error: false,
                 msg: `${result[0].name} (${result[0].username}) logged in!`,
+                userID: result[0].id,
+                name: result[0].name,
+                sex: result[0].gender,
+                birthday: result[0].birthday,
+                email: result[0].email,
+                phone: result[0].phone,
+                avatar: result[0].avatar,
+                roles: result[0].type,
                 token,
               });
             }
             return res.status(401).send({
+              error: true,
               msg: "Username or password is incorrect!",
             });
           });
@@ -136,8 +156,8 @@ class UserController {
       });
     } catch (err) {
       res.status(500).json({
-        success: false,
-        message: error.message,
+        error: true,
+        msg: err,
       });
     }
   }
@@ -150,8 +170,8 @@ class UserController {
       // check if refresh token exists
       if (!refreshToken) {
         return res.status(400).json({
-          success: false,
-          message: "Please Login first.",
+          error: true,
+          msg: "Please Login first.",
         });
       }
 
@@ -160,22 +180,22 @@ class UserController {
         // Invalid
         if (error) {
           return res.status(400).json({
-            success: false,
-            message: "Please Login first.",
+            error: true,
+            msg: "Please Login first.",
           });
         }
 
         // Valid
         const accessToken = authService.createAccessToken({ id: user.id });
         res.status(200).json({
-          success: true,
+          error: false,
           accessToken,
         });
       });
     } catch (error) {
       res.status(400).json({
-        success: false,
-        message: error.message,
+        error: true,
+        msg: error.message,
       });
     }
   }
@@ -222,7 +242,7 @@ class UserController {
   async getUserByIDRequest(req, res) {
     try {
       const userID = req.params.id;
-      var command = "SELECT * FROM `User` WHERE userID =" + userID;
+      var command = "SELECT * FROM `User` WHERE id =" + userID;
       SQLpool.execute(command, (err, result, field) => {
         if (err) throw err;
         console.log(result.length);
@@ -230,6 +250,7 @@ class UserController {
       });
     } catch (err) {
       console.log(err);
+      return res.send({ error: true, msg: err });
     }
   }
 
@@ -253,6 +274,7 @@ class UserController {
       });
     } catch (err) {
       console.log(err);
+      return res.send({ error: true, msg: err });
     }
   }
   async deleteUserByIDRequest(req, res) {
@@ -266,6 +288,7 @@ class UserController {
       });
     } catch (err) {
       console.log(err);
+      return res.send({ error: true, msg: err });
     }
   }
 }
