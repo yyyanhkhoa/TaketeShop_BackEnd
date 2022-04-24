@@ -222,7 +222,7 @@ class UserController {
   async getUserByIDRequest(req, res) {
     try {
       const userID = req.params.id;
-      var command = "SELECT * FROM `User` WHERE userID =" + userID;
+      var command = "SELECT * FROM `User` WHERE id =" + userID;
       SQLpool.execute(command, (err, result, field) => {
         if (err) throw err;
         console.log(result.length);
