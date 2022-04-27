@@ -12,13 +12,14 @@ class UserController {
 
   async register(req, res) {
     let command = "";
-    const { username, password, name, birthday, gender, email, type } =
+    const { username, password, name, birthday, gender, email, phone, type } =
       req.body;
     try {
       SQLpool.getConnection((err, connection) => {
         if (err) throw err;
 
         //check duplicated email
+<<<<<<< Updated upstream
         command = `SELECT * FROM User WHERE email = ${"'" + email + "'"};`;
         connection.query(command, (error, result) => {
           if (error) throw error;
@@ -32,6 +33,10 @@ class UserController {
         command = `SELECT * FROM User WHERE username = ${
           "'" + username + "'"
         };`;
+=======
+        command = `SELECT * FROM User WHERE email = ${"'" + email + "'"} OR ${"'" + username + "'"
+          };`;
+>>>>>>> Stashed changes
         connection.query(command, (error, result) => {
           if (error) throw error;
           if (result.length) {
@@ -50,7 +55,7 @@ class UserController {
           }
           // has hashed pw => add to database
           command =
-            "INSERT INTO `User` (`id`, `username`, `password`, `name`, `birthday`, `gender`, `email`, `type`, `create_time`, `update_time`) VALUES (NULL, '" +
+            "INSERT INTO `User` (`id`, `username`, `password`, `name`, `birthday`, `gender`, `email`,'phone', `type`, `create_time`, `update_time`) VALUES (NULL, '" +
             username +
             "', '" +
             passwordHashed +
@@ -62,6 +67,8 @@ class UserController {
             gender +
             "', '" +
             email +
+            "', '" +
+            phone+
             "', '" +
             type +
             "', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
@@ -90,9 +97,8 @@ class UserController {
       SQLpool.getConnection((err, connection) => {
         if (err) throw err;
 
-        command = `SELECT * FROM User WHERE username = ${
-          "'" + username + "'"
-        };`;
+        command = `SELECT * FROM User WHERE username = ${"'" + username + "'"
+          };`;
         connection.query(command, (error, result) => {
           if (error) throw error;
           if (!result.length) {
