@@ -19,7 +19,7 @@ class UserController {
         if (err) throw err;
 
         //check duplicated email
-<<<<<<< Updated upstream
+
         command = `SELECT * FROM User WHERE email = ${"'" + email + "'"};`;
         connection.query(command, (error, result) => {
           if (error) throw error;
@@ -30,13 +30,12 @@ class UserController {
           }
         });
         //check duplicated username
-        command = `SELECT * FROM User WHERE username = ${
-          "'" + username + "'"
-        };`;
-=======
+        command = `SELECT * FROM User WHERE username = ${"'" + username + "'"
+          };`;
+
         command = `SELECT * FROM User WHERE email = ${"'" + email + "'"} OR ${"'" + username + "'"
           };`;
->>>>>>> Stashed changes
+
         connection.query(command, (error, result) => {
           if (error) throw error;
           if (result.length) {
@@ -68,7 +67,7 @@ class UserController {
             "', '" +
             email +
             "', '" +
-            phone+
+            phone +
             "', '" +
             type +
             "', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
@@ -231,7 +230,7 @@ class UserController {
       var command = "SELECT * FROM `User` WHERE id =" + userID;
       SQLpool.execute(command, (err, result, field) => {
         if (err) throw err;
-        console.log(result.length);
+        //console.log(result.length);
         res.send(result);
       });
     } catch (err) {
@@ -254,7 +253,7 @@ class UserController {
         userID;
       SQLpool.execute(command, (err, result, field) => {
         if (err) throw err;
-        console.log(result);
+        console.log(result.length);
         res.send(result);
       });
     } catch (err) {

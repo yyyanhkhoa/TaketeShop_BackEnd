@@ -32,7 +32,7 @@
     "express-validator": "^6.14.0",
     "jsonwebtoken": "^8.5.1",
     "mogoose": "^0.0.1-security",
-    "mongodb": "^4.4.1",
+    "mongodb": "^4.5.0",
     "mongoose": "^6.2.8",
     "mysql2": "^2.3.3",
     "request": "^2.88.2",
