@@ -49,9 +49,14 @@ const UserSchema = new Schema({
         enum: ['SHOP','STAFF','CUSTOMER','BANNED'],
         default: 'CUSTOMER'
     },
-
-}, {
-    timestamps: true,
-})
+     createAt:{
+        type:Date,
+        default:Date.now,
+        required: true
+    },
+},
+//  {
+//     timestamps: true,}
+)
 
 module.exports = mongoose.model('Users', UserSchema)
