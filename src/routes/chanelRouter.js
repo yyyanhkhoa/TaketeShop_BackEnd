@@ -1,13 +1,12 @@
 const router = require("express").Router();
 const { chanelController } = require("../app/controller/index");
 
+router.get('/',chanelController.getAllQuestion)
+router.get('/product/:id', chanelController.getQuestionByIdProduct)
+router.get('/:id',chanelController.findQuestionFromId)
+router.post('/',chanelController.addQuestion)
 
-router.post("/addWthImage", chanelController.addProductWithoutImage);
-router.patch("/update/:id", chanelController.updateProductByIDRequest);
-router.get("/productList", chanelController.getProductWithCategoryID);
-router.get("/all", chanelController.getAllProduct);
-router.get("/:id", chanelController.getProductByID);
-router.get("/", chanelController.index);
-
+router.patch('/:id',chanelController.setQuestion)
+router.delete('/:id',chanelController.deleteQuestionFromId)
 
 module.exports = router;
